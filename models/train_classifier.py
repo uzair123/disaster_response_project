@@ -1,24 +1,79 @@
 import sys
+# import libraries
+import pandas as pd
+import numpy as np
+from sqlalchemy import create_engine
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from sklearn.model_selection import train_test_split
+import nltk
+import re
+from nltk.stem.wordnet import WordNetLemmatizer
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report
+from nltk.corpus import stopwords
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
+from sklearn.externals import joblib
 
+nltk.download(['punkt', 'wordnet'])
+nltk.download('stopwords')
 
 def load_data(database_filepath):
-    pass
-
+ # load data from database
+ engine = create_engine('sqlite:///'+database_filepath)
+ df = pd.read_sql_table("disaster_response", engine)
+ X = df.message.values 
+ cat_df = df.loc[:,'related':]
+ names  = cat_df.columns
+ y      = cat_df.values 
+ return X,y,names
 
 def tokenize(text):
-    pass
+   
+    # tokenize text
+    text = re.sub(r"[^a-zA-Z0-9]", " ", text)
+    tokens = word_tokenize(text)
+    #words = [w for w in words if w not in stopwords.words('english')]
+    # initiate lemmatizer
+    lemmatizer = WordNetLemmatizer()
+
+    # iterate through each token
+    clean_tokens = []
+    for tok in tokens:
+        # lemmatize, normalize case, and remove leading/trailing white space
+        clean_tok  = lemmatizer.lemmatize(tok).lower().strip()
+        clean_tokens.append(clean_tok)
+
+    return clean_tokens
 
 
 def build_model():
-    pass
-
+    pipeline_rforest  = Pipeline([ ('vect',  CountVectorizer(tokenizer=tokenize)),
+                                   ('tfidf', TfidfTransformer()), 
+                                   ('clf',   MultiOutputClassifier(RandomForestClassifier())),])
+    
+    return pipeline_rforest
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+  y_pred = model.predict(X_test)
+  for ind in range (len(category_names)):
+    print('CATEGORY',category_names[ind])
+    print(classification_report(Y_test[:,ind], y_pred[:,ind]))
+   
 
 
 def save_model(model, model_filepath):
-    pass
+  # Save the model as a pickle in a file 
+  joblib.dump(model, model_filepath) 
 
 
 def main():
@@ -26,6 +81,8 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
+        
+        print('Spliting Data for Training and Test :-)')
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
         
         print('Building model...')

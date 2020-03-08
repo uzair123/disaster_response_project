@@ -26,11 +26,11 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('disaster_response', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("../models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -38,11 +38,15 @@ model = joblib.load("../models/your_model_name.pkl")
 @app.route('/index')
 def index():
     
-    # extract data needed for visuals
+    # extract data needed for visualsds
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+    weather_counts = df.groupby(['genre'])['weather_related'].sum()
+    aid_counts = df.groupby(['genre'])['aid_related'].sum()
+    flood_counts = df.groupby(['genre'])['floods'].sum()
+    #grp     = d.get_group('social')
+    #msgtype = d['weather_related'].sum()
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -51,11 +55,65 @@ def index():
                 Bar(
                     x=genre_names,
                     y=genre_counts
-                )
+                ) 
             ],
 
             'layout': {
                 'title': 'Distribution of Message Genres',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Genre"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=genre_names,
+                    y=weather_counts
+                ) 
+            ],
+
+            'layout': {
+                'title': 'Distribution of Weather related messages',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Genre"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=genre_names,
+                    y=aid_counts
+                ) 
+            ],
+
+            'layout': {
+                'title': 'Distribution of Aid related messages',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Genre"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=genre_names,
+                    y=flood_counts
+                ) 
+            ],
+
+            'layout': {
+                'title': 'Distribution of Flood related messages',
                 'yaxis': {
                     'title': "Count"
                 },
