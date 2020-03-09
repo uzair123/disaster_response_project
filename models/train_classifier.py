@@ -23,6 +23,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 from sklearn.externals import joblib
+from sklearn.utils import parallel_backend 
 
 nltk.download(['punkt', 'wordnet'])
 nltk.download('stopwords')
@@ -41,8 +42,11 @@ def tokenize(text):
    
     # tokenize text
     text = re.sub(r"[^a-zA-Z0-9]", " ", text)
-    tokens = word_tokenize(text)
-    #words = [w for w in words if w not in stopwords.words('english')]
+    tokens = word_tokenize(text)    
+
+    #Stopword removal
+    tokens = [w for w in tokens if w not in stopwords.words('english')]
+    
     # initiate lemmatizer
     lemmatizer = WordNetLemmatizer()
 
@@ -61,13 +65,23 @@ def build_model():
                                    ('tfidf', TfidfTransformer()), 
                                    ('clf',   MultiOutputClassifier(RandomForestClassifier())),])
     
-    return pipeline_rforest
+    parameters = {     
+        'clf__estimator__n_estimators': [100,200],
+        'clf__estimator__min_samples_split': [2,4]
+    }
+
+    cv = GridSearchCV(pipeline_rforest, param_grid=parameters, cv=2, n_jobs=-1, verbose=3)
+
+    return cv
 
 def evaluate_model(model, X_test, Y_test, category_names):
   y_pred = model.predict(X_test)
+  print("\nBest Parameters:", model.best_params_)
+  print("--------------------------------------")
   for ind in range (len(category_names)):
     print('CATEGORY',category_names[ind])
     print(classification_report(Y_test[:,ind], y_pred[:,ind]))
+ 
    
 
 
@@ -84,20 +98,20 @@ def main():
         
         print('Spliting Data for Training and Test :-)')
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        with parallel_backend('multiprocessing'):
+         print('Building model...')
+         model = build_model()
         
-        print('Building model...')
-        model = build_model()
+         print('Training model...')
+         model.fit(X_train, Y_train)
         
-        print('Training model...')
-        model.fit(X_train, Y_train)
-        
-        print('Evaluating model...')
-        evaluate_model(model, X_test, Y_test, category_names)
+         print('Evaluating model...')
+         evaluate_model(model, X_test, Y_test, category_names)
 
-        print('Saving model...\n    MODEL: {}'.format(model_filepath))
-        save_model(model, model_filepath)
+         print('Saving model...\n    MODEL: {}'.format(model_filepath))
+         save_model(model, model_filepath)
 
-        print('Trained model saved!')
+         print('Trained model saved!')
 
     else:
         print('Please provide the filepath of the disaster messages database '\
