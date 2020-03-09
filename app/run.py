@@ -45,8 +45,6 @@ def index():
     weather_counts = df.groupby(['genre'])['weather_related'].sum()
     aid_counts = df.groupby(['genre'])['aid_related'].sum()
     flood_counts = df.groupby(['genre'])['floods'].sum()
-    #grp     = d.get_group('social')
-    #msgtype = d['weather_related'].sum()
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [

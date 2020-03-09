@@ -1,5 +1,12 @@
 # Disaster Response Pipeline Project
+This project classifies the messages into 36 categories (related to disaster).
 
+ETL piple line transforms the data and saves it in database. 
+ML pipleline uses multioutput classificaiton - using random forest classifier. Gridserch is performed with cv=2 for runtime considerations
+In app dashboard two additional visualizations are plotted regarding how weather, flood and aid related messages were shared. 
+
+# acknowledgments:
+ Following instructions are taken from Udacity disaster response control project
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 
